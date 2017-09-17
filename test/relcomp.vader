@@ -1,0 +1,185 @@
+Execute (setup):
+  source autoload/relcomp.vim
+  let namespace = "relcomp#"
+  let FindPathStart = function(namespace . "FindPathStart")
+  let StripBaseFromPath = function(namespace . "StripBaseFromPath")
+  let GetFileTypeIndicator = function(namespace . "GetFileTypeIndicator")
+  let BuildCompletionList = function(namespace . "BuildCompletionList")
+
+" ======================================================================
+Execute (FindPathStart):
+
+Execute (  returns current column for empty line):
+  let line = "   "
+  let column = 3
+
+  let result = FindPathStart(line, column)
+
+  AssertEqual 3, result
+
+Execute (  returns current column when whitespace is before cursor):
+  let line = " foo"
+  let column = 2
+
+  let result = FindPathStart(line, column)
+
+  AssertEqual 2, result
+
+Execute (  returns WORD boundary backwards from cursor position):
+  let line = " foo/bar baz"
+  let column = 5
+
+  let result = FindPathStart(line, column)
+
+  AssertEqual 2, result
+
+Execute (  returns WORD boundary backwards when cursor is on second word):
+  let line = "foo bar"
+  let column = 6
+
+  let result = FindPathStart(line, column)
+
+  AssertEqual 5, result
+
+Execute (  returns position of first single quote before cursor):
+  let line = "foo 'bar"
+  let column = 8
+
+  let result = FindPathStart(line, column)
+
+  AssertEqual 6, result
+
+Execute (  take dots and slashes into account):
+  let line = "./foo/bar"
+  let column = 8
+
+  let result = FindPathStart(line, column)
+
+  AssertEqual 1, result
+
+
+" ======================================================================
+Execute (StripBaseFromPath):
+
+Execute (  returns filename when base is empty):
+  let base = ""
+  let path = "pathname"
+
+  let result = StripBaseFromPath(base, path)
+
+  AssertEqual  "pathname", result
+
+Execute (  returns pathname without the base):
+  let base = "pa"
+  let path = "pathname"
+
+  let result = StripBaseFromPath(base, path)
+
+  AssertEqual  "thname", result
+
+Execute (  handles relative paths correctly):
+  let base = "../pa"
+  let path = "otherpath/../pathname"
+
+  let result = StripBaseFromPath(base, path)
+
+  AssertEqual  "thname", result
+
+" ======================================================================
+Execute (GetFileTypeIndicator):
+
+Execute (  returns '/' when is_directory is true):
+  let is_directory = v:true
+  let path = "path"
+
+  let result = GetFileTypeIndicator(path, is_directory)
+
+  AssertEqual  "/", result
+
+Execute (  returns extension when is_directory is false):
+  let is_directory = v:false
+  let path = "path.ext"
+
+  let result = GetFileTypeIndicator(path, is_directory)
+
+  AssertEqual  "(ext)", result
+
+" ======================================================================
+Execute (BuildCompletionList):
+  " create stub as drop in for builtin `isdirectory()`
+  let s:is_dir_value = v:false
+
+  function! s:IsDirectory(path)
+    return s:is_dir_value
+  endfunction
+
+  function! s:SID()
+    return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_SID$')
+  endfunction
+
+  function! s:SetIsDirectory(value)
+    let s:is_dir_value = a:value
+  endfunction
+
+  let IsDirRef = function('<SNR>'.s:SID().'_IsDirectory')
+  let SetIsDir = function('<SNR>'.s:SID().'_SetIsDirectory')
+
+
+Execute (  stub IsDirectory is working):
+  call SetIsDir(v:true)
+  AssertEqual v:true, IsDirRef('1234')
+
+Execute (  returns filenames without extension and type info):
+  let base = '../a'
+  let paths = ['somedir/../autoload', 'somedir/../awesomefile.jsx']
+  let IsDir = {path -> match(path, 'autoload') != -1}
+
+  let result = BuildCompletionList(base, paths, IsDir)
+  
+  let expected_result = [
+    \ { "word": "../autoload", "menu": "/" },
+    \ { "word": "../awesomefile", "menu": "(jsx)" }
+    \]
+  
+  AssertEqual expected_result, result
+
+Execute (  returns both with and without extension if only match):
+  let base = '../aw'
+  let paths = ['somedir/../awesomefile.jsx']
+  let IsDir = {path -> v:false}
+
+  let result = BuildCompletionList(base, paths, IsDir)
+  
+  let expected_result = [
+    \ { "word": "../awesomefile", "menu": "(jsx)" },
+    \ { "word": "../awesomefile.jsx" }
+    \]
+  
+  AssertEqual expected_result, result
+
+Execute (  returns both with and without trailing slash if only match and directory):
+  let base = '../au'
+  let paths = ['somedir/../autoload']
+  let IsDir = {path -> v:true}
+
+  let result = BuildCompletionList(base, paths, IsDir)
+  
+  let expected_result = [
+    \ { "word": "../autoload", "menu": "/" },
+    \ { "word": "../autoload/" }
+    \]
+  
+  AssertEqual expected_result, result
+
+Execute (  omits menu entry when file has no extension):
+  let base = '../a'
+  let paths = ['somedir/../awesomescript']
+  let IsDir = {path -> v:false}
+
+  let result = BuildCompletionList(base, paths, IsDir)
+  
+  let expected_result = [
+    \ { "word": "../awesomescript" }
+    \]
+  
+  AssertEqual expected_result, result
