@@ -1,0 +1,37 @@
+language: ruby
+dist: trusty
+sudo: false
+env:
+  global:
+    - DEPS=$HOME/deps
+    - PATH=$DEPS/bin:$PATH
+matrix:
+  include:
+    - env: ENV=neovim
+    - env: ENV=vim8
+
+install: |
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+  if [ "$ENV" == "neovim" ]; then
+    # https://github.com/neovim/bot-ci#nightly-builds
+    eval "$(curl -Ss https://raw.githubusercontent.com/neovim/bot-ci/master/scripts/travis-setup.sh) nightly-x64"
+    mkdir -p ${DEPS}/bin
+    ln -s $(which nvim) ${DEPS}/bin/vim
+    export VADER_OUTPUT_FILE=/dev/stderr
+    return
+  fi
+  C_OPTS="--prefix=$DEPS --with-features=huge --disable-gui "
+  git clone --depth 1 https://github.com/vim/vim
+  cd vim
+  export PATH=/usr/bin:$PATH
+  ./configure $C_OPTS
+  make
+  make install
+  cd -
+
+before_script:
+  - git clone https://github.com/junegunn/vader.vim.git
+
+script: 
+  - test/run-on-travis
