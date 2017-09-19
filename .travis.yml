@@ -24,7 +24,7 @@ install: |
   C_OPTS="--prefix=$DEPS --with-features=huge --disable-gui "
   git clone --depth 1 https://github.com/vim/vim
   cd vim
-  export PATH=/usr/bin:$PATH
+  export PATH=${DEPS}/bin:$PATH
   ./configure $C_OPTS
   make
   make install
