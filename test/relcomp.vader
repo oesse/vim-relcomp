@@ -9,53 +9,53 @@ Execute (setup):
 " ======================================================================
 Execute (FindPathStart):
 
-Execute (  returns current column for empty line):
+Execute (  returns current byte offset for empty line):
   let line = "   "
-  let column = 3
+  let byte_offset = 3
 
-  let result = FindPathStart(line, column)
+  let result = FindPathStart(line, byte_offset)
 
   AssertEqual 3, result
 
-Execute (  returns current column when whitespace is before cursor):
+Execute (  returns current byte offset when whitespace is before cursor):
   let line = " foo"
-  let column = 2
+  let byte_offset = 2
 
-  let result = FindPathStart(line, column)
+  let result = FindPathStart(line, byte_offset)
 
-  AssertEqual 2, result
+  AssertEqual 1, result
 
 Execute (  returns WORD boundary backwards from cursor position):
   let line = " foo/bar baz"
-  let column = 5
+  let byte_offset = 5
 
-  let result = FindPathStart(line, column)
+  let result = FindPathStart(line, byte_offset)
 
-  AssertEqual 2, result
+  AssertEqual 1, result
 
 Execute (  returns WORD boundary backwards when cursor is on second word):
   let line = "foo bar"
-  let column = 6
+  let byte_offset = 6
 
-  let result = FindPathStart(line, column)
+  let result = FindPathStart(line, byte_offset)
 
-  AssertEqual 5, result
+  AssertEqual 4, result
 
 Execute (  returns position of first single quote before cursor):
   let line = "foo 'bar"
-  let column = 8
+  let byte_offset = 7
 
-  let result = FindPathStart(line, column)
+  let result = FindPathStart(line, byte_offset)
 
-  AssertEqual 6, result
+  AssertEqual 5, result
 
 Execute (  take dots and slashes into account):
   let line = "./foo/bar"
-  let column = 8
+  let byte_offset = 8
 
-  let result = FindPathStart(line, column)
+  let result = FindPathStart(line, byte_offset)
 
-  AssertEqual 1, result
+  AssertEqual 0, result
 
 
 " ======================================================================

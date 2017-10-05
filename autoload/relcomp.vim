@@ -1,14 +1,13 @@
-
 " === Public API =======================================================
 function! relcomp#CompleteRelativePath(findstart, base)
   if a:findstart
-    return relcomp#FindPathStart(line("."), col("."))
+    return relcomp#FindPathStart(getline("."), col(".") - 1)
   endif
 
   let nosuf = v:false
   let return_list = v:true
 
-  let file_dir = expand("%:h") 
+  let file_dir = expand("%:h")
   let file_list = globpath(file_dir, a:base . "*", nosuf, return_list)
 
   return relcomp#BuildCompletionList(a:base, file_list, function('isdirectory'))
@@ -16,10 +15,9 @@ endfunction
 
 
 " === Helper Functions =================================================
-function! relcomp#FindPathStart(line, column)
-  let byte_offset = a:column - 1
-  let result_column = s:FindClosestWordStart(a:line, byte_offset) + 1
-  return result_column
+function! relcomp#FindPathStart(line, byte_offset)
+  let result_byte_offset = s:FindClosestWordStart(a:line, a:byte_offset)
+  return result_byte_offset
 endfunction
 
 function! s:FindClosestWordStart(line, limit)
